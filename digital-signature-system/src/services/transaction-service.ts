@@ -7,6 +7,7 @@ import metricsCollector from '../monitoring/metrics-collector';
 import logger from '../monitoring/logger';
 import postgresConnection from '../db/postgres-connection';
 import * as crypto from 'crypto';
+import { BASE_CURRENCY, convertToBase, formatCurrency, isSupportedCurrency } from '../utils/currency';
 
 export interface TransactionRequest {
   amount: number;
@@ -121,16 +122,28 @@ export class TransactionService {
       }
 
       // Step 3: Check Transaction Limits
+      // Limits are defined in the base currency (EUR). Amounts in any other
+      // supported currency are converted to EUR before being compared, so a
+      // single set of thresholds governs every currency consistently.
+      if (!isSupportedCurrency(request.currency)) {
+        throw new Error(`Unsupported currency "${request.currency}"`);
+      }
+      const amountInBaseCurrency = convertToBase(request.amount, request.currency);
+
       const role = request.signatory === 'Omar' ? 'SINDICO' : 'CLIENT';
       const limits = transactionLimits[role as keyof typeof transactionLimits];
 
-      if (request.amount > limits.maxSingle) {
-        throw new Error(`Amount €${request.amount} exceeds max single transaction €${limits.maxSingle}`);
+      if (amountInBaseCurrency > limits.maxSingle) {
+        throw new Error(
+          `Amount ${formatCurrency(request.amount, request.currency)} ` +
+            `(${formatCurrency(amountInBaseCurrency, BASE_CURRENCY)}) exceeds max single transaction ` +
+            `€${limits.maxSingle}`,
+        );
       }
 
-      // Determine if signature and 2FA required
-      const requiresSignature = request.amount > 100;
-      const requires2FA = request.amount > 500;
+      // Determine if signature and 2FA required (thresholds are in EUR)
+      const requiresSignature = amountInBaseCurrency > 100;
+      const requires2FA = amountInBaseCurrency > 500;
 
       const transaction: Transaction = {
         transactionId,

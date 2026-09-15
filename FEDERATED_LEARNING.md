@@ -170,9 +170,9 @@ const framework = new FederatedLearningFramework(initialWeights, aggregator);
 
 ## Testing
 
-Run the test suite:
+Run the demo:
 ```bash
-npx ts-node src/models/federated-learning.test.ts
+npx ts-node src/models/federated-learning.demo.ts
 ```
 
 This executes:

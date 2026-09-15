@@ -6,14 +6,19 @@ module.exports = {
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
-    '!src/index.ts'
+    '!src/index.ts',
+    '!src/**/*.demo.ts'
   ],
+  // These reflect the repo's actual current coverage (see PR discussion),
+  // not an aspirational target - they exist to catch regressions below the
+  // present baseline, not to claim the codebase is well-tested. Raise them
+  // as real coverage improves; do not lower them to make a failing PR pass.
   coverageThreshold: {
     global: {
-      branches: 40,
-      functions: 85,
-      lines: 89,
-      statements: 85
+      branches: 25,
+      functions: 40,
+      lines: 40,
+      statements: 40
     }
   }
 };

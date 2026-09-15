@@ -63,10 +63,10 @@ ml-optimization-suite/
 │   │   ├── server.ts (API handler + routes)
 │   │   ├── federated-learning-api.ts (API implementation)
 │   │   ├── federated-learning-client.ts (TypeScript SDK)
-│   │   └── federated-learning-client.test.ts (SDK tests)
+│   │   └── federated-learning-client.demo.ts (SDK usage examples)
 │   ├── models/
 │   │   ├── federated-learning.ts (Framework)
-│   │   └── federated-learning.test.ts (Framework tests)
+│   │   └── federated-learning.demo.ts (Framework usage examples)
 │   ├── db/
 │   │   ├── database.ts (Connection pooling, schema, CRUD)
 │   │   └── repository.ts (Data access layer, domain models)

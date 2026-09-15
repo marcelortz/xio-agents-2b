@@ -7,6 +7,7 @@
     "build": "tsc",
     "start": "node dist/bin/run-simulation.js",
     "dev": "ts-node bin/run-simulation.ts",
+    "demo:scale": "ts-node bin/run-large-simulation.ts",
     "pretest": "tsc",
     "test": "node --test dist/tests/*.test.js"
   },

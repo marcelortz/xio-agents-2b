@@ -763,4 +763,4 @@ const client = new FederatedLearningClient({
 
 - [API Documentation](./FEDERATED_LEARNING_API.md)
 - [Framework Documentation](./FEDERATED_LEARNING.md)
-- [Usage Examples](./src/api/federated-learning-client.test.ts)
+- [Usage Examples](./src/api/federated-learning-client.demo.ts)

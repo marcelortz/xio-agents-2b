@@ -1,5 +1,9 @@
 # XIO
 
+[![CI](https://github.com/marcelortz/XIO/actions/workflows/ci.yml/badge.svg)](https://github.com/marcelortz/XIO/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](tsconfig.json)
+
 Simulación de agentes económicos con genética, metabolismo financiero y gobernanza multicapa, escrita en TypeScript strict mode.
 
 ## Arquitectura
@@ -9,7 +13,9 @@ src/xio-genome.ts        Traits, mutación, cruce (crossover), especialización 
 src/xio-ledger.ts        Ledger inmutable encadenado por SHA-256, presión financiera
 src/xio-metabolism.ts    Costes por ciclo, ingresos, predicción de muerte por burn rate
 src/xio-governance.ts    4 capas de control: self-check, peer review, arena oversight, kill switch
-src/xio-agent.base.ts    Clase base AgentBase + ejemplos LegalAgent, SalesAgent
+src/xio-agent.base.ts    Clase base AgentBase + 17 roles: Legal, Sales, Marketing, Engineering, Support,
+                         Finance, Product, Research, HR, Operations, Design, Data, Security, Compliance,
+                         Logistics, CustomerSuccess, Procurement
 src/xio-arena.ts         Simulador de ciclos (6 fases) con reproducción y cap de población
 src/xio-simulation.ts    Orquestador: bootstrap, run, exportación de auditoría
 bin/run-simulation.ts    CLI de ejecución
@@ -63,13 +69,28 @@ npm start -- <cycles> <agentsPerRole>
 npm run dev -- 20 4
 ```
 
-Ejemplo:
+Imprime, por ciclo: agentes vivos/muertos, balance total, nacimientos, muertes, y los eventos (nacimientos, muertes, decisiones de gobernanza). Al final reporta si el ledger quedó íntegro y el tamaño de la población final.
+
+Ejemplo (5 ciclos, 2 agentes por rol):
 
 ```bash
-npm run dev -- 15 3
+npm run dev -- 5 2
 ```
 
-Imprime, por ciclo: agentes vivos/muertos, balance total, nacimientos, muertes, y los eventos (nacimientos, muertes, decisiones de gobernanza). Al final reporta si el ledger quedó íntegro y el tamaño de la población final.
+```
+cycle 1: alive=5 dead=0 balance=666.44 births=1 kills=0
+  - legal-1-0 born from legal-0 x legal-1
+cycle 2: alive=7 dead=0 balance=1003.18 births=2 kills=0
+  - legal-2-0 born from legal-0 x legal-1
+  - sales-2-1 born from sales-2 x sales-3
+cycle 3: alive=10 dead=0 balance=1457.20 births=3 kills=0
+  ...
+cycle 5: alive=20 dead=0 balance=3096.04 births=6 kills=0
+  ...
+
+ledger integrity verified: true
+final population: 20 agents (20 alive)
+```
 
 ### Uso programático
 
@@ -90,6 +111,15 @@ sim.bootstrap();
 const reports = sim.run();
 const audit = sim.exportAudit(); // { verified, ledger, reports, finalPopulation }
 ```
+
+### Escala (100+ agentes)
+
+```bash
+npm run demo:scale -- 30 6 300
+# cycles=30, agentsPerRole=6 (x17 roles = 102 iniciales), maxPopulation=300
+```
+
+El `Ledger` verifica su integridad de forma incremental (solo re-hashea las entradas nuevas desde la última verificación, no toda la cadena) y las consultas por agente (`getBalance`, `financialPressure`, `getHistory(agentId)`) usan un índice por agente en vez de recorrer todo el ledger. Con esto, 300 agentes durante 30 ciclos (~25,700 entradas de ledger) corren en ~175ms en vez de colgarse por minutos.
 
 ## Tests
 

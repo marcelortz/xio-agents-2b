@@ -17,6 +17,21 @@ const TRAIT_KEYS: (keyof Traits)[] = [
 const ROLE_TRAIT_BIAS: Record<string, Partial<Traits>> = {
   legal: { resilience: 0.2, riskTolerance: -0.15 },
   sales: { creativity: 0.2, speed: 0.15 },
+  marketing: { creativity: 0.25, speed: 0.1, riskTolerance: 0.1 },
+  engineering: { efficiency: 0.25, resilience: 0.15, riskTolerance: -0.1 },
+  support: { resilience: 0.2, efficiency: 0.15, riskTolerance: -0.1 },
+  finance: { efficiency: 0.2, riskTolerance: -0.2 },
+  product: { creativity: 0.15, efficiency: 0.15, riskTolerance: 0.05 },
+  research: { creativity: 0.2, riskTolerance: 0.15 },
+  hr: { resilience: 0.15, speed: 0.1 },
+  operations: { efficiency: 0.2, resilience: 0.1 },
+  design: { creativity: 0.2, speed: 0.1 },
+  data: { efficiency: 0.15, creativity: 0.15 },
+  security: { resilience: 0.25, riskTolerance: -0.15 },
+  compliance: { resilience: 0.15, efficiency: 0.1, riskTolerance: -0.15 },
+  logistics: { efficiency: 0.15, speed: 0.15 },
+  'customer-success': { resilience: 0.15, speed: 0.1 },
+  procurement: { efficiency: 0.15, riskTolerance: -0.1 },
 };
 
 function clamp01(value: number): number {

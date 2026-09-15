@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: xio-agents-config
+  namespace: xio-agents
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  DB_TYPE: "postgres"
+  DB_HOST: "xio-agents-db"
+  DB_PORT: "5432"
+  DB_NAME: "xio_agents"
+  DB_MAX_CONNECTIONS: "20"

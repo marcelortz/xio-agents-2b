@@ -17,6 +17,7 @@ build/
 .credentials.json
 credentials/
 secrets/
+k8s/secret.yaml
 
 # IDE and editor files
 .vscode/

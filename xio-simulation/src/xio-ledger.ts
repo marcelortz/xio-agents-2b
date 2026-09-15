@@ -29,7 +29,21 @@ function sha256(input: string): string {
 
 export class Ledger {
   private entries: LedgerEntry[] = [];
+  private entriesByAgent = new Map<string, LedgerEntry[]>();
   private sequence = 0;
+
+  // Incremental integrity-check cursor: entries before `verifiedUpTo` were
+  // already confirmed part of a valid chain by a prior verifyIntegrity()
+  // call, so subsequent calls only re-hash entries appended since then
+  // instead of the whole ledger. This makes verifyIntegrity() amortized
+  // O(1) per call in the common case (called once per new entry), instead
+  // of O(ledger size) — essential once ledgers grow past a few thousand
+  // entries with 100+ agents. Trade-off: an entry that was already folded
+  // into `verifiedUpTo` and is *then* mutated in place (bypassing append,
+  // as the tests do deliberately) will not be re-detected by a later call.
+  private verifiedUpTo = 0;
+  private verifiedTipHash = GENESIS_HASH;
+  private chainBroken = false;
 
   append(entry: {
     agentId: string;
@@ -45,13 +59,21 @@ export class Ledger {
     const hash = sha256(payload);
     const record: LedgerEntry = { id, timestamp, agentId: entry.agentId, type: entry.type, amount: entry.amount, metadata, prevHash, hash };
     this.entries.push(record);
+    const byAgent = this.entriesByAgent.get(entry.agentId);
+    if (byAgent) byAgent.push(record);
+    else this.entriesByAgent.set(entry.agentId, [record]);
     return record;
   }
 
   verifyIntegrity(): boolean {
-    let prevHash = GENESIS_HASH;
-    for (const entry of this.entries) {
-      if (entry.prevHash !== prevHash) return false;
+    if (this.chainBroken) return false;
+    let prevHash = this.verifiedTipHash;
+    for (let i = this.verifiedUpTo; i < this.entries.length; i++) {
+      const entry = this.entries[i];
+      if (entry.prevHash !== prevHash) {
+        this.chainBroken = true;
+        return false;
+      }
       const payload = JSON.stringify({
         id: entry.id,
         timestamp: entry.timestamp,
@@ -61,22 +83,28 @@ export class Ledger {
         metadata: entry.metadata,
         prevHash: entry.prevHash,
       });
-      if (sha256(payload) !== entry.hash) return false;
+      if (sha256(payload) !== entry.hash) {
+        this.chainBroken = true;
+        return false;
+      }
       prevHash = entry.hash;
     }
+    this.verifiedUpTo = this.entries.length;
+    this.verifiedTipHash = prevHash;
     return true;
   }
 
   getBalance(agentId: string): number {
-    return this.entries
-      .filter((e) => e.agentId === agentId)
-      .reduce((sum, e) => sum + this.signedAmount(e), 0);
+    const byAgent = this.entriesByAgent.get(agentId);
+    if (!byAgent) return 0;
+    return byAgent.reduce((sum, e) => sum + this.signedAmount(e), 0);
   }
 
   financialPressure(agentId: string, windowCycles = 10): FinancialPressure {
-    const recent = this.entries
-      .filter((e) => e.agentId === agentId && (e.type === 'income' || e.type === 'expense'))
-      .slice(-windowCycles);
+    const byAgent = this.entriesByAgent.get(agentId);
+    const recent = byAgent
+      ? byAgent.filter((e) => e.type === 'income' || e.type === 'expense').slice(-windowCycles)
+      : [];
     const netFlow = recent.reduce((sum, e) => sum + this.signedAmount(e), 0);
     const expenses = recent.filter((e) => e.type === 'expense').reduce((sum, e) => sum + e.amount, 0);
     const burnRate = recent.length > 0 ? expenses / recent.length : 0;
@@ -91,7 +119,8 @@ export class Ledger {
   }
 
   getHistory(agentId?: string): LedgerEntry[] {
-    return agentId ? this.entries.filter((e) => e.agentId === agentId) : [...this.entries];
+    if (!agentId) return [...this.entries];
+    return [...(this.entriesByAgent.get(agentId) ?? [])];
   }
 
   private signedAmount(entry: LedgerEntry): number {
